@@ -17,12 +17,10 @@ namespace Proj_Mongo_API.Controllers
         }
 
         [HttpGet]
-
         public ActionResult<List<City>> Get() => _citiesService.Get();
 
         [HttpGet("{id:length(24)}", Name = "GetCity")]
-
-        public ActionResult<City> Get(string id)
+        public ActionResult<City> GetById(string id)
         {
             var city = _citiesService.Get(id);
 
@@ -32,7 +30,6 @@ namespace Proj_Mongo_API.Controllers
         }
 
         [HttpPost]
-
         public ActionResult<City> Create(City city)
         {
             return _citiesService.Create(city);

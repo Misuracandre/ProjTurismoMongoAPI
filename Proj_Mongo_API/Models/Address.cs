@@ -13,7 +13,7 @@ namespace Proj_Mongo_API.Models
         public string Neighborhood { get; set; }
         public string ZipCode { get; set; }
         public string Extension { get; set; }
-        public City City { get; set; }
+        public City? IdCity { get; set; }
         public DateTime Registration_Date { get; set; }
     }
 }

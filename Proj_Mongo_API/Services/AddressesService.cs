@@ -8,6 +8,7 @@ namespace Proj_Mongo_API.Services
     public class AddressesService
     {
         private readonly IMongoCollection<Address> _address;
+        private readonly CitiesService _citiesService;
 
         public AddressesService(ITurismoMongoSettings settings)
         {
@@ -28,7 +29,6 @@ namespace Proj_Mongo_API.Services
 
         public Address Create(Address address)
         {
-           // address.IdCity = idCity;
             _address.InsertOne(address);
             return address;
         }

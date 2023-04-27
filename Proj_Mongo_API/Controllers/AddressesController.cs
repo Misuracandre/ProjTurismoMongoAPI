@@ -33,6 +33,7 @@ namespace Proj_Mongo_API.Controllers
             if (address == null) return NotFound();
 
             var city = _citiesService.Get(address.IdCity.ToString());
+
             if (city == null) return NotFound();
 
             address.IdCity = city;
@@ -43,23 +44,22 @@ namespace Proj_Mongo_API.Controllers
         [HttpPost]
         public ActionResult<Address> Create(Address address)
         {
-            var city = _citiesService.Get(address.IdCity.ToString());
+            var city = _citiesService.Get(address.IdCity.Id);
 
             if (city == null)
             {
-                city = new City { Description = address.IdCity.Description };
-                _citiesService.Create(city);
+                return NotFound();
             }
             address.IdCity = city;
 
             var createdAddress = _addressesServices.Create(address);
+
             if(createdAddress != null)
             {
                 return createdAddress;
             }
 
-            return NotFound();
-            
+            return NotFound();           
         }
 
         [HttpPut("{id:length(24)}")]

@@ -10,7 +10,6 @@ namespace Proj_Mongo_API.Models
         public string Id { get; set; }
         public string Description { get; set; }
         public DateTime Registration_Date { get; set; }
-
         public override string ToString()
         {
             return Id;

@@ -22,18 +22,41 @@ namespace Proj_Mongo_API.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<Customer>> Get() => _customersService.Get();
+        public ActionResult<List<Customer>> Get()
+        {
+            var customers = _customersService.Get();
+
+            foreach (var customer in customers)
+            {
+                var address = _addressesService.Get(customer.IdAddress.ToString());
+
+                if (address != null)
+                {
+                    var city = _citiesService.Get(address.IdCity.ToString());
+
+                    if (city != null)
+                    {
+                        address.IdCity = city;
+                        customer.IdAddress = address;
+                    }
+                }
+            }
+            return customers;
+        }
 
         [HttpGet("{id.length(24)}", Name = "GetCustomer")]
         public ActionResult<Customer> Get(string id)
         {
             var customer = _customersService.Get(id);
-
             if (customer == null) return NotFound();
 
             var address = _addressesService.Get(customer.IdAddress.ToString());
             if (address == null) return NotFound();
 
+            var city = _citiesService.Get(address.IdCity.ToString());
+            if (city == null) return NotFound();
+
+            address.IdCity = city;
             customer.IdAddress = address;
 
             return customer;
@@ -42,38 +65,62 @@ namespace Proj_Mongo_API.Controllers
         [HttpPost]
         public ActionResult<Customer> Create(Customer customer)
         {
-            var address = _addressesService.Get(customer.IdAddress.Id.ToString());
-
-            if (address == null)
+            if (customer.IdAddress != null)
             {
-                // Certifica-se de que o ID da cidade seja válido
-                var city = _citiesService.Get(customer.IdAddress.IdCity.ToString());
-                if (city == null)
+                var existingAddress = _addressesService.Get(customer.IdAddress.Id);
+                if (existingAddress == null)
                 {
-                    return BadRequest("Invalid city ID");
+                    return NotFound();
                 }
 
-                address = new Address
+                if (existingAddress.IdCity == null && customer.IdAddress.IdCity != null)
+                {
+                    var existingCity = _citiesService.Get(customer.IdAddress.IdCity.Id);
+                    if (existingCity == null)
+                    {
+                        existingCity = new City
+                        {
+                            Description = customer.IdAddress.IdCity.Description,
+                        };
+                        _citiesService.Create(existingCity);
+                    }
+                    existingAddress.IdCity = existingCity;
+                }
+                customer.IdAddress = existingAddress;
+            }
+            else
+            {
+                var newAddress = new Address
                 {
                     Street = customer.IdAddress.Street,
                     Number = customer.IdAddress.Number,
                     Neighborhood = customer.IdAddress.Neighborhood,
                     ZipCode = customer.IdAddress.ZipCode,
-                    IdCity = customer.IdAddress.IdCity,
                 };
 
-                var createdAddress = _addressesService.Create(address);
-                if (createdAddress != null)
+                if (customer.IdAddress.IdCity != null)
                 {
-                    // Atribui o novo endereço criado à propriedade customer.IdAddress
-                    customer.IdAddress = createdAddress;
-
-                    var createdCustomer = _customersService.Create(customer);
-                    if (createdCustomer != null)
+                    var existingCity = _citiesService.Get(customer.IdAddress.IdCity.Id);
+                    if (existingCity == null)
                     {
-                        return createdCustomer;
+                        existingCity = new City
+                        {
+                            Description = customer.IdAddress.IdCity.Description,
+                        };
+                        _citiesService.Create(existingCity);
                     }
+                    newAddress.IdCity = existingCity;
                 }
+
+                _addressesService.Create(newAddress);
+                customer.IdAddress = newAddress;
+            }
+
+            var createdCustomer = _customersService.Create(customer);
+
+            if (createdCustomer != null)
+            {
+                return createdCustomer;
             }
             return NotFound();
         }
@@ -85,12 +132,40 @@ namespace Proj_Mongo_API.Controllers
 
             if (c == null) return NotFound();
 
-            _customersService.Update(id, customer);
+            c.Name = customer.Name;
+            c.Phone = customer.Phone;
+            c.IdAddress = customer.IdAddress;
+
+            var address = _addressesService.Get(customer.IdAddress.ToString());
+            if (address == null)
+            {
+                address = _addressesService.Create(customer.IdAddress);
+            }
+
+            address.Street = customer.IdAddress.Street;
+            address.Number = customer.IdAddress.Number;
+            address.Neighborhood = customer.IdAddress.Neighborhood;
+            address.IdCity = customer.IdAddress.IdCity;
+
+            var city = _citiesService.Get(address.IdCity.ToString());
+            if (city == null)
+            {
+                city = _citiesService.Create(address.IdCity);
+            }
+
+            city.Description = address.IdCity.Description;
+
+            address.IdCity = city;
+
+            c.IdAddress = address;
+
+            _customersService.Update(id, c);
+
             return Ok();
         }
 
         [HttpDelete("{id:length(24)}")]
-        public ActionResult Delete(string id)
+        public ActionResult DeleteCustomer(string id)
         {
             if (id == null) return NotFound();
 
@@ -98,6 +173,40 @@ namespace Proj_Mongo_API.Controllers
             if (customer == null) return NotFound();
 
             _customersService.Delete(id);
+            return Ok();
+        }
+
+        [HttpDelete("{id:length(24)}")]
+        public ActionResult DeleteAddress(string id)
+        {
+            if (id == null) return NotFound();
+
+            var customer = _customersService.Get(id);
+            if (customer == null) return NotFound();
+
+            customer.IdAddress = null;
+            _customersService.Update(id, customer);
+
+            return Ok();
+        }
+
+        [HttpDelete("{id:length(24)}")]
+        public ActionResult DeleteCity(string id)
+        {
+            if (id == null) return NotFound();
+
+            var customer = _customersService.Get(id);
+            if (customer == null) return NotFound();
+
+            var addressId = customer.IdAddress.ToString();
+            var address = _addressesService.Get(addressId);
+            if (address != null)
+            {
+                address.IdCity = null;
+            }
+
+            _customersService.Update(id, customer);
+
             return Ok();
         }
     }

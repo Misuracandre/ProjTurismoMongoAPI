@@ -11,6 +11,8 @@ namespace Proj_Mongo_API.Models
         public string Id { get; set; }
         public string Name { get; set; }
         public string Phone { get; set; }
+
+        [BsonRepresentation(BsonType.ObjectId)]
         public Address IdAddress { get; set; }
         public DateTime Registration_Date { get; set; }
     }

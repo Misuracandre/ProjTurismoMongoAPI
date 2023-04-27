@@ -26,6 +26,8 @@ namespace Proj_Mongo_API.Controllers
         {
             var customers = _customersService.Get();
 
+            if (customers == null) return NotFound();
+
             foreach (var customer in customers)
             {
                 var address = _addressesService.Get(customer.IdAddress.ToString());
@@ -65,6 +67,8 @@ namespace Proj_Mongo_API.Controllers
         [HttpPost]
         public ActionResult<Customer> Create(Customer customer)
         {
+            if (customer == null) return NotFound();
+
             if (customer.IdAddress != null)
             {
                 var existingAddress = _addressesService.Get(customer.IdAddress.Id);
@@ -128,13 +132,13 @@ namespace Proj_Mongo_API.Controllers
         [HttpPut("{id:length(24)}")]
         public ActionResult Update(string id, Customer customer)
         {
-            var c = _customersService.Get(id);
+            var customerToUpdate = _customersService.Get(id);
 
-            if (c == null) return NotFound();
+            if (customerToUpdate == null) return NotFound();
 
-            c.Name = customer.Name;
-            c.Phone = customer.Phone;
-            c.IdAddress = customer.IdAddress;
+            customerToUpdate.Name = customer.Name;
+            customerToUpdate.Phone = customer.Phone;
+            customerToUpdate.IdAddress = customer.IdAddress;
 
             var address = _addressesService.Get(customer.IdAddress.ToString());
             if (address == null)
@@ -157,9 +161,9 @@ namespace Proj_Mongo_API.Controllers
 
             address.IdCity = city;
 
-            c.IdAddress = address;
+            customerToUpdate.IdAddress = address;
 
-            _customersService.Update(id, c);
+            _customersService.Update(id, customerToUpdate);
 
             return Ok();
         }
